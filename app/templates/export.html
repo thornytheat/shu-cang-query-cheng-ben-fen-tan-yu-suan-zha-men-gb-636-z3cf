@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}导出{% endblock %}
+{% block body %}
+<section class="block">
+  <h1 class="block__title">导出</h1>
+  <p class="block__sub">{{ kinds | length }} 项 · 账单 {{ counts.bills }} 行 · 隔离 {{ counts.quarantine }} 行</p>
+  <table class="ruled ruled--num">
+    <thead><tr><th>类型</th><th>文件名</th><th>说明</th><th class="num">字节</th><th class="num">摘要</th><th>下载</th></tr></thead>
+    <tbody>
+      {% for item in kinds %}
+      <tr>
+        <td class="mono">{{ item.kind }}</td>
+        <td class="mono trunc" title="{{ item.filename }}">{{ item.filename }}</td>
+        <td>{{ item.hint }}</td>
+        <td class="num">{{ item.bytes }}</td>
+        <td class="num mono">{{ item.sha256 }}</td>
+        <td><a class="link" href="/api/export?kind={{ item.kind }}{% if batch %}&amp;batch_id={{ batch.batch_id }}{% endif %}">下载</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="line-note">金额 {{ totals.amount_total | default('0') | int | yuan }} {{ money_unit }} · 未分摊 {{ totals.amount_unallocated | default('0') | int | yuan }} · 尾差 {{ totals.residual_diff | default('0') }} 分</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/tables.js" defer></script>{% endblock %}

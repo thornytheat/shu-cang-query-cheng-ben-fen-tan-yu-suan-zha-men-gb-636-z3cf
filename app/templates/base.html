@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}查询成本分摊清单{% endblock %}</title>
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="stylesheet" href="/static/layout.css">
+<link rel="stylesheet" href="/static/components.css">
+<link rel="stylesheet" href="/static/print.css" media="print">
+</head>
+<body class="sheet">
+<a class="skip" href="#main">跳到清单正文</a>
+<header class="stub">
+  <div class="stub__brand">
+    <span class="stub__mark">CS</span>
+    <span class="stub__name">查询成本分摊清单</span>
+  </div>
+  <nav class="tabs" aria-label="清单分区">
+    {% for href, label, key in nav %}
+    <a class="tabs__item{% if page_key == key %} is-on{% endif %}" href="{{ href }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+</header>
+<dl class="runstrip">
+  <div class="runstrip__cell"><dt>批次号</dt><dd>{{ batch.batch_no if batch else '未开单' }}</dd></div>
+  <div class="runstrip__cell"><dt>校验位</dt><dd>{{ batch.check_digit if batch else '—' }}</dd></div>
+  <div class="runstrip__cell"><dt>数据版本</dt><dd>{{ batch.input_digest[:10] if batch else '—' }}</dd></div>
+  <div class="runstrip__cell"><dt>状态</dt><dd>{% if batch %}{{ batch.status | status }}{% else %}未开单{% endif %}</dd></div>
+  <div class="runstrip__cell"><dt>生成时间</dt><dd>{{ print_ts }}</dd></div>
+  <div class="runstrip__cell"><dt>时区</dt><dd>+08:00</dd></div>
+</dl>
+<main id="main" class="body">
+{% block body %}{% endblock %}
+</main>
+<footer class="perf">
+  <p class="perf__line" aria-hidden="true">✂ －－ －－ －－ －－ －－ －－ －－ －－ －－ －－ －－ －－</p>
+  <p class="perf__meta">制表 数据平台组 · 规则 {{ rule_version }} · 归档联</p>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

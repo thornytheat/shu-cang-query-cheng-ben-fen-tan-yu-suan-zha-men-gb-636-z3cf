@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}分摊结果{% endblock %}
+{% block body %}
+<section class="block">
+  <h1 class="block__title">分摊结果</h1>
+  <p class="block__sub">{{ totals.rows_valid | default('0') }} 条 · 总额 {{ total_cents | yuan }} {{ money_unit }} · 未分摊 {{ unallocated_cents | yuan }}</p>
+  {% if depts %}
+  <table class="ruled ruled--num">
+    <thead>
+      <tr><th class="idx">#</th><th>部门</th><th>本批扫描 GB</th><th>分摊金额 {{ money_unit }}</th><th>占总额</th><th>预算 {{ money_unit }}</th></tr>
+    </thead>
+    <tbody>
+      {% for dept in depts %}
+      <tr>
+        <td class="idx num">{{ loop.index }}</td>
+        <td>{{ dept.dept }}</td>
+        <td class="num">{{ dept.scan_gb | gb }}</td>
+        <td class="num">{{ dept.allocated_cents | yuan }}</td>
+        <td class="num">{{ dept.allocated_cents | pct(total_cents) }}</td>
+        <td class="num">{% if dept.budget_cents is none %}—{% else %}{{ dept.budget_cents | yuan }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td class="idx"></td><td>合计</td><td class="num">—</td><td class="num">{{ allocated_cents | yuan }}</td><td class="num">{{ allocated_cents | pct(total_cents) }}</td><td class="num"></td></tr>
+    </tfoot>
+  </table>
+  {% else %}
+  <p class="empty">还没有分摊结果，先导入账单。</p>
+  {% endif %}
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">共享查询份额</h2>
+  <p class="block__sub">{{ shared_query_count }} 条共享 · {{ shared | length }} 份</p>
+  {% if shared %}
+  <table class="ruled ruled--num">
+    <thead>
+      <tr><th>查询编号</th><th>部门</th><th>权重</th><th>份额 {{ money_unit }}</th></tr>
+    </thead>
+    <tbody>
+      {% for row in shared %}
+      <tr><td class="mono">{{ row.query_id }}</td><td>{{ row.dept }}</td><td class="num">{{ row.weight | gb }}</td><td class="num">{{ row.share_cents | yuan }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">本批没有共享查询。</p>
+  {% endif %}
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">未分摊</h2>
+  {% if unallocated %}
+  <table class="ruled ruled--num">
+    <thead><tr><th>查询编号</th><th>金额 {{ money_unit }}</th><th>原因码</th></tr></thead>
+    <tbody>
+      {% for row in unallocated %}
+      <tr><td class="mono">{{ row.query_id }}</td><td class="num">{{ row.share_cents | yuan }}</td><td class="mono">Q_UNALLOCATED</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">没有未分摊金额。</p>
+  {% endif %}
+  <p class="line-note">金额账 {{ allocated_cents }} + {{ unallocated_cents }} = {{ total_cents }} 分</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/tables.js" defer></script>{% endblock %}

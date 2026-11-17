@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}申诉回滚{% endblock %}
+{% block body %}
+<section class="block">
+  <h1 class="block__title">申诉回滚</h1>
+  <p class="block__sub">版本 {{ version }} · 申诉 {{ appeals | length }} 条 · 快照 {{ versions | length }} 个</p>
+  <table class="ruled ruled--num ruled--ledger">
+    <thead>
+      <tr><th>版本</th><th>来源</th><th class="num">部门数</th><th class="num">分摊合计 {{ money_unit }}</th><th class="num">保留合计</th><th>生成时间</th><th>对比</th></tr>
+    </thead>
+    <tbody>
+      {% for item in versions %}
+      <tr>
+        <td class="mono">v{{ item.version }}</td>
+        <td>{{ item.kind | status }}</td>
+        <td class="num">{{ item.summary.depts | length }}</td>
+        <td class="num">{{ item.summary.totals.amount_allocated | default('0') | int | yuan }}</td>
+        <td class="num">{{ item.summary.totals.amount_kept | default('0') | int | yuan }}</td>
+        <td>{{ item.created_at | dt_iso }}</td>
+        <td><a class="link" href="/appeals?batch_id={{ batch.batch_id }}&left={{ item.version }}&right={{ version }}">对当前</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="empty">还没有版本快照。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="line-note">对比区间 v{{ left_version }} → v{{ right_version }} · 变动 {{ diff.moved_cents | yuan }} {{ money_unit }}</p>
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">本版差异</h2>
+  {% if diff.depts %}
+  <table class="ruled ruled--num">
+    <thead>
+      <tr><th>部门</th><th class="num">分摊前 {{ money_unit }}</th><th class="num">分摊后</th><th class="num">差额</th><th class="num">保留前</th><th class="num">保留后</th><th>结论</th></tr>
+    </thead>
+    <tbody>
+      {% for row in diff.depts %}
+      <tr>
+        <td>{{ row.dept }}</td>
+        <td class="num">{{ row.allocated_before | yuan }}</td>
+        <td class="num">{{ row.allocated_after | yuan }}</td>
+        <td class="num">{{ row.allocated_delta | yuan }}</td>
+        <td class="num">{{ row.kept_before | yuan }}</td>
+        <td class="num">{{ row.kept_after | yuan }}</td>
+        <td class="state {% if row.status_after == 'KEEP' %}state--ok{% elif row.status_after == 'NO_BUDGET' %}state--muted{% else %}state--warn{% endif %}">{{ row.status_after | status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">两个版本之间没有部门差异。</p>
+  {% endif %}
+  {% if diff.totals %}
+  <table class="ruled ruled--num" data-sortable>
+    <thead><tr><th data-sort="text">合计项</th><th data-sort="num">前</th><th data-sort="num">后</th><th data-sort="num">差额</th></tr></thead>
+    <tbody>
+      {% for row in diff.totals %}
+      <tr><td class="mono">{{ row.key }}</td><td class="num">{{ row.before }}</td><td class="num">{{ row.after }}</td><td class="num">{{ row.delta }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+{% if buckets %}
+<section class="block">
+  <h2 class="block__title block__title--sub">时段复核</h2>
+  <table class="ruled ruled--num">
+    <thead><tr><th>查询编号</th><th class="num">时长(小时)</th><th class="num">金额(分)</th><th class="num">计费(分)</th><th>跨零点</th><th>边界</th><th>桶</th></tr></thead>
+    <tbody>
+      {% for row in buckets %}
+      <tr>
+        <td class="mono">{{ row.query_id }}</td>
+        <td class="num">{{ row.hours }}</td>
+        <td class="num">{{ row.cents }}</td>
+        <td class="num">{{ row.billed_cents }}</td>
+        <td class="state {% if row.crosses_day %}state--warn{% else %}state--muted{% endif %}">{% if row.crosses_day %}是{% else %}否{% endif %}</td>
+        <td class="mono">{% for mark in row.marks %}{{ mark }} {% endfor %}{% if not row.marks %}—{% endif %}</td>
+        <td class="mono trunc" title="{% for item in row.buckets %}{{ item.local }} {{ item.phase }} {{ item.hours }}h{% if not loop.last %} | {% endif %}{% endfor %}">{% for item in row.buckets %}{{ item.local }} {{ item.phase }} {{ item.hours }}h{% if not loop.last %} · {% endif %}{% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section class="block">
+  <h2 class="block__title block__title--sub">四账</h2>
+  <table class="ruled ruled--kv">
+    <tbody>
+      {% for account in accounts %}
+      <tr>
+        <th>{{ account.key }}</th>
+        <td class="num">{{ account.left }} / {{ account.right }}</td>
+        <td class="state {% if account.ok %}state--ok{% else %}state--bad{% endif %}">{% if account.ok %}平{% else %}不平{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="line-note">总额 {{ totals.amount_total | default('0') | int | yuan }} {{ money_unit }} · 分摊 {{ totals.amount_allocated | default('0') | int | yuan }} · 未分摊 {{ totals.amount_unallocated | default('0') | int | yuan }}</p>
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">申诉记录</h2>
+  {% if appeals %}
+  <table class="ruled ruled--num" data-sortable>
+    <thead>
+      <tr><th data-sort="text">申诉号</th><th data-sort="text">查询编号</th><th data-sort="text">原部门</th><th data-sort="text">改判到</th><th>改判字段</th><th data-sort="text">结论</th><th data-sort="text">原因码</th><th data-sort="num">版本</th></tr>
+    </thead>
+    <tbody>
+      {% for row in appeals %}
+      <tr>
+        <td class="mono">{{ row.appeal_id }}</td>
+        <td class="mono">{{ row.query_id or '—' }}</td>
+        <td>{{ row.dept or '—' }}</td>
+        <td>{{ row.target_dept or '—' }}</td>
+        <td class="mono trunc">{% if row.fix %}{% for key, value in row.fix.items() %}{{ key }}={{ value }} {% endfor %}{% else %}—{% endif %}</td>
+        <td class="state {% if row.status == 'APPLIED' %}state--ok{% elif row.status == 'MERGED' %}state--muted{% else %}state--bad{% endif %}">{{ row.status | status }}</td>
+        <td class="mono">{{ row.code or '—' }} {{ row.label }}</td>
+        <td class="num">v{{ row.version }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">还没有申诉。</p>
+  {% endif %}
+</section>
+
+<section class="block noprint">
+  <h2 class="block__title block__title--sub">提交申诉</h2>
+  <form class="form" id="appeal-form" data-batch="{{ batch.batch_id }}" data-version="{{ version }}" novalidate>
+    <label class="field">
+      <span class="field__label">查询编号</span>
+      <select name="query_id" id="appeal-query">
+        {% for item in queries %}
+        <option value="{{ item.query_id }}">{{ item.query_id }} · {{ item.dept }} · {{ item.cost_cents | yuan }}</option>
+        {% else %}
+        <option value="">没有查询</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">改判到部门</span>
+      <input class="input" type="text" id="appeal-dept" name="target_dept" list="dept-names" autocomplete="off">
+    </label>
+    <label class="field">
+      <span class="field__label">开始时间</span>
+      <input class="input" type="text" id="appeal-start" name="started_at" placeholder="2026-11-05T21:30:00+08:00" autocomplete="off">
+    </label>
+    <label class="field field--tight">
+      <span class="field__label">时长(秒)</span>
+      <input class="input" type="text" id="appeal-duration" name="duration_s" inputmode="numeric" autocomplete="off">
+    </label>
+    <button class="btn" type="submit" id="appeal-submit">提交申诉</button>
+    <p class="form__msg" id="appeal-msg" role="status" aria-live="polite"></p>
+  </form>
+  <datalist id="dept-names">
+    {% for dept in depts %}<option value="{{ dept.dept }}"></option>{% endfor %}
+  </datalist>
+</section>
+
+<section class="block noprint">
+  <h2 class="block__title block__title--sub">回滚</h2>
+  <form class="form" id="rollback-form" data-batch="{{ batch.batch_id }}" data-version="{{ version }}" novalidate>
+    <label class="field">
+      <span class="field__label">目标版本</span>
+      <select name="to_version" id="rollback-target">
+        {% for item in rollback_targets %}
+        <option value="{{ item.version }}">v{{ item.version }} · {{ item.kind | status }}</option>
+        {% else %}
+        <option value="">没有可回滚版本</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn btn--ghost" type="submit" id="rollback-submit">回滚</button>
+    <p class="form__msg" id="rollback-msg" role="status" aria-live="polite"></p>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js" defer></script><script src="/static/tables.js" defer></script>{% endblock %}

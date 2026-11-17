@@ -1,0 +1,82 @@
+/* 打印层：只留清单与骑缝线，交互元件与表单全部隐藏。 */
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+
+  html,
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .sheet {
+    max-width: none;
+    padding: 0;
+    border: 0;
+    min-height: 0;
+  }
+
+  .tabs,
+  .noprint,
+  .btn,
+  .form,
+  .skip,
+  .actions {
+    display: none !important;
+  }
+
+  .stub {
+    grid-template-columns: 1fr;
+    border-bottom: 1.5px solid #000;
+  }
+
+  .runstrip {
+    background: #fff;
+    border-bottom: 1px solid #000;
+  }
+
+  .runstrip__cell {
+    border-left: 1px dotted #666;
+  }
+
+  .block {
+    border-bottom: 1px dotted #666;
+    page-break-inside: auto;
+  }
+
+  .ruled thead {
+    display: table-header-group;
+  }
+
+  .ruled thead th {
+    background: #fff;
+    color: #000;
+    border-bottom: 1px solid #000;
+    position: static;
+  }
+
+  .ruled tbody tr {
+    page-break-inside: avoid;
+  }
+
+  .trunc {
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .link {
+    color: #000;
+    border-bottom: 0;
+  }
+
+  .perf {
+    display: block;
+    page-break-inside: avoid;
+  }
+
+  .perf__line {
+    border-top: 1px dashed #000;
+  }
+}

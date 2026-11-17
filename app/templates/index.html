@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}账单接入{% endblock %}
+{% block body %}
+<section class="block">
+  <h1 class="block__title">账单接入</h1>
+  <form class="form" id="import-form" novalidate>
+    <label class="field">
+      <span class="field__label">样例</span>
+      <select name="source" id="source">
+        {% for item in samples %}
+        <option value="{{ item.name }}"{% if item.name == default_source %} selected{% endif %}>{{ item.name }}</option>
+        {% else %}
+        <option value="">没有样例</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span class="field__label">声明编码</span>
+      <select name="charset" id="charset">
+        <option value="">自动</option>
+        <option value="utf-8">utf-8</option>
+        <option value="gb18030">gb18030</option>
+      </select>
+    </label>
+    <button class="btn" type="submit" id="import-submit">导入</button>
+    <p class="form__msg" id="import-msg" role="status" aria-live="polite"></p>
+  </form>
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">本次结论</h2>
+  {% if batch %}
+  <table class="ruled ruled--kv">
+    <tbody>
+      <tr><th>批次号</th><td class="num">{{ batch.batch_no }}</td><th>校验位</th><td class="num">{{ batch.check_digit }}</td></tr>
+      <tr><th>数据行</th><td class="num">{{ totals.rows_data | default('0') }}</td><th>有效行</th><td class="num">{{ totals.rows_valid | default('0') }}</td></tr>
+      <tr><th>隔离行</th><td class="num">{{ totals.rows_quarantine | default('0') }}</td><th>去重行</th><td class="num">{{ totals.rows_dedup | default('0') }}</td></tr>
+      <tr><th>总额</th><td class="num">{{ totals.amount_total | yuan }} {{ money_unit }}</td><th>分段</th><td class="num">{{ totals.segment_count | default('0') }}</td></tr>
+      {% for account in accounts %}
+      <tr>
+        <th>{{ account.key }}</th>
+        <td class="num">{{ account.left }} / {{ account.right }}</td>
+        <td colspan="2" class="state {% if account.ok %}state--ok{% else %}state--bad{% endif %}">{% if account.ok %}平{% else %}不平{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="line-note">来源 {{ batch.source }} · 预算 {{ batch.budget_source }} · 数据版本 {{ batch.input_digest[:12] }}</p>
+  {% else %}
+  <p class="empty">还没有批次，先在上面导入一份样例。</p>
+  {% endif %}
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">原因码分布</h2>
+  {% if distribution %}
+  <ul class="bars">
+    {% for item in distribution %}
+    <li class="bars__row">
+      <span class="bars__code">{{ item.code }}</span>
+      <span class="bars__label">{{ item.label }}</span>
+      <span class="bars__bar" style="--w: {{ (item.count / bar_max) | round(3) }}"></span>
+      <span class="bars__n num">{{ item.count }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">本批次没有异常记录。</p>
+  {% endif %}
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">列契约</h2>
+  <table class="ruled">
+    <thead>
+      <tr><th>列名</th><th>含义</th><th>类型</th><th>单位</th><th>必填</th></tr>
+    </thead>
+    <tbody>
+      {% for col in contract.columns %}
+      <tr>
+        <td class="mono">{{ col.name }}</td>
+        <td>{{ col.label }}</td>
+        <td class="mono">{{ col.type }}</td>
+        <td>{{ col.unit or '—' }}</td>
+        <td>{% if col.required %}是{% else %}否{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="line-note">单价 {{ contract.prices[0].value }} 元/GB · 夜间 {{ contract.prices[2].value }} 元/小时 · 最低计费 {{ contract.min_charge }} 元</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js" defer></script>{% endblock %}

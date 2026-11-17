@@ -1,0 +1,28 @@
+/* 变量层：纸白底、墨绿强调、全等宽字族、零圆角。 */
+:root {
+  --paper: #f7f5ee;
+  --bg: #f7f5ee;
+  --surface: #efece1;
+  --paper-2: #efece1;
+  --paper-3: #e4e0d2;
+  --ink: #1b2420;
+  --ink-muted: #5b665f;
+  --rule: #cfc9b8;
+  --rule-strong: #8d8878;
+  --accent: #1f6b4f;
+  --accent-ink: #f1f6f2;
+  --ok: #2f7d4f;
+  --warn: #9a6f14;
+  --bad: #a23327;
+  --info: #3b6478;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, "Cascadia Mono", "Noto Sans Mono CJK SC", monospace;
+  --font-ui: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-doc: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+  --radius: 2px;
+  --radius-sm: 1px;
+  --pad: 14px;
+  --gap: 20px;
+  --shadow: none;
+  --stub-ink: #45514a;
+  --perf-gap: 6px;
+}

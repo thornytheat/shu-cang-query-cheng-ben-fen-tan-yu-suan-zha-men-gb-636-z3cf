@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}异常查询{% endblock %}
+{% block body %}
+<section class="block">
+  <h1 class="block__title">异常查询</h1>
+  <p class="block__sub">{{ summary.rows_quarantine | default('0') }} 行隔离 · {{ summary.code_count | default('0') }} 种原因码 · 通过率 {{ summary.pass_rate | default('0') }}%</p>
+  <table class="ruled ruled--num">
+    <thead><tr><th>原因码</th><th>含义</th><th>级别</th><th>阶段</th><th class="num">条数</th><th>筛选</th></tr></thead>
+    <tbody>
+      {% for item in distribution %}
+      <tr>
+        <td class="mono">{{ item.code }}</td>
+        <td>{{ item.label }}</td>
+        <td class="state {% if item.level == 'error' %}state--bad{% elif item.level == 'warn' %}state--warn{% else %}state--muted{% endif %}">{{ item.level_label }}</td>
+        <td>{{ item.stage }}</td>
+        <td class="num">{{ item.count }}</td>
+        <td><a class="link" href="/quarantine?code={{ item.code }}">只看这条</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">本批次没有异常记录。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">隔离与证据行</h2>
+  <p class="block__sub">{% if active_code %}筛选 {{ active_code }} · {% endif %}{{ issues | length }} 条</p>
+  <table class="ruled ruled--num" data-sortable>
+    <thead>
+      <tr><th data-sort="num">行号</th><th data-sort="text">原因码</th><th data-sort="text">字段</th><th>原值</th><th>说明</th><th data-sort="text">级别</th></tr>
+    </thead>
+    <tbody>
+      {% for row in issues %}
+      <tr>
+        <td class="num">{{ (row.row_ref or '—') | replace('第 ', '') | replace(' 行', '') }}</td>
+        <td class="mono">{{ row.code }}</td>
+        <td class="mono">{{ row.field or '—' }}</td>
+        <td class="mono trunc" title="{{ row.raw_value or '' }}">{{ row.raw_value or '—' }}</td>
+        <td class="trunc" title="{{ row.detail or '' }}">{{ row.detail or '—' }}</td>
+        <td class="state {% if row.level == 'error' %}state--bad{% elif row.level == 'warn' %}state--warn{% else %}state--muted{% endif %}">{{ row.level | level }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">没有隔离行。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="line-note">行账 {{ row_account.left | default('0') }} = {{ row_account.right | default('0') }}{% if row_account.ok is defined and row_account.ok %} · 平{% elif row_account.ok is defined %} · 不平{% endif %}</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/tables.js" defer></script>{% endblock %}

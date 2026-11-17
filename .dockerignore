@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+var/
+*.sqlite
+logs/
+screenshots/
+test-artifacts/
+.env
+.DS_Store

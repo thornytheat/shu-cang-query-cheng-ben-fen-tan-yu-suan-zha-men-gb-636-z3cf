@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}批次清单{% endblock %}
+{% block body %}
+<section class="block">
+  <h1 class="block__title">批次清单</h1>
+  <p class="block__sub">{{ batches | length }} 个批次 · 当前 {{ batch.batch_no if batch else '未开单' }}</p>
+  <table class="ruled ruled--num ruled--ledger" data-sortable>
+    <thead>
+      <tr><th data-sort="text">批次号</th><th data-sort="text">校验</th><th data-sort="text">状态</th><th data-sort="num">版本</th><th data-sort="num">行数</th><th data-sort="num">总额 {{ money_unit }}</th><th data-sort="num">保留 {{ money_unit }}</th><th data-sort="num">截断 {{ money_unit }}</th><th data-sort="text">生成时间</th><th>明细</th></tr>
+    </thead>
+    <tbody>
+      {% for item in batches %}
+      <tr>
+        <td class="mono">{{ item.batch_no }}</td>
+        <td class="mono">{% if verify(item.batch_no, item.check_digit) %}✓ {{ item.check_digit }}{% else %}✕ {{ item.check_digit }}{% endif %}</td>
+        <td class="state {% if item.status == 'done' %}state--ok{% elif item.status == 'failed' %}state--bad{% else %}state--warn{% endif %}">{{ item.status | status }}</td>
+        <td class="num">{{ item.version }}</td>
+        <td class="num">{{ item.row_count }}</td>
+        <td class="num">{{ item.total_cents | yuan }}</td>
+        <td class="num">{{ item.totals.amount_kept | default('0') | int | yuan }}</td>
+        <td class="num">{{ item.totals.amount_blocked | default('0') | int | yuan }}</td>
+        <td class="num">{{ item.finished_at | localdt }}</td>
+        <td><a class="link" href="/allocations?batch_id={{ item.batch_id }}">看这笔</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="empty">还没有批次，先导入一份样例。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="line-note">校验位按批次号数字位加权求和取模 11 得出，末位为 X 表示余 10。</p>
+</section>
+
+<section class="block noprint">
+  <h2 class="block__title block__title--sub">归档</h2>
+  <div class="actions">
+    <button class="btn" type="button" id="print-btn">打印清单</button>
+    <button class="btn btn--ghost" type="button" id="copy-btn" data-copy="{{ batch.batch_no if batch else '' }}">复制批次号</button>
+    <span class="form__msg" id="copy-msg" role="status" aria-live="polite"></span>
+  </div>
+  <p class="line-note">打印版只留清单与骑缝线，隐藏表单与按钮。</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/receipt.js" defer></script><script src="/static/tables.js" defer></script>{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}闸门决策{% endblock %}
+{% block body %}
+<section class="block">
+  <h1 class="block__title">闸门决策</h1>
+  <p class="block__sub">版本 {{ version }} · 预算内 {{ kept_cents | yuan }} {{ money_unit }} · 被截断 {{ blocked_cents | yuan }}</p>
+  {% if depts %}
+  <table class="ruled ruled--num">
+    <thead>
+      <tr><th class="idx">#</th><th>部门</th><th>分摊 {{ money_unit }}</th><th>预算 {{ money_unit }}</th><th>保留 {{ money_unit }}</th><th>截断 {{ money_unit }}</th><th>结论</th></tr>
+    </thead>
+    <tbody>
+      {% for dept in depts %}
+      <tr>
+        <td class="idx num">{{ loop.index }}</td>
+        <td>{{ dept.dept }}</td>
+        <td class="num">{{ dept.allocated_cents | yuan }}</td>
+        <td class="num">{% if dept.budget_cents is none %}—{% else %}{{ dept.budget_cents | yuan }}{% endif %}</td>
+        <td class="num">{{ dept.kept_cents | yuan }}</td>
+        <td class="num">{{ dept.blocked_cents | yuan }}</td>
+        <td class="state {% if dept.gate_status == 'KEEP' %}state--ok{% elif dept.gate_status == 'NO_BUDGET' %}state--muted{% else %}state--warn{% endif %}">{{ dept.gate_status | status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">还没有闸门结论，先导入账单。</p>
+  {% endif %}
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">排序明细</h2>
+  {% if gates %}
+  <table class="ruled ruled--num" data-sortable>
+    <thead>
+      <tr><th data-sort="text">部门</th><th data-sort="num">序</th><th data-sort="text">查询编号</th><th data-sort="num">收益分</th><th data-sort="num">收益/成本</th><th data-sort="num">成本 {{ money_unit }}</th><th data-sort="num">累计 {{ money_unit }}</th><th data-sort="text">结论</th></tr>
+    </thead>
+    <tbody>
+      {% for row in gates %}
+      <tr>
+        <td>{{ row.dept }}</td>
+        <td class="num">{{ row.rank_no }}</td>
+        <td class="mono">{{ row.query_id }}</td>
+        <td class="num">{{ row.value_score | score }}</td>
+        <td class="num">{{ row.ratio | ratio }}</td>
+        <td class="num">{{ row.cost_cents | yuan }}</td>
+        <td class="num">{{ row.cumulative_cents | yuan }}</td>
+        <td class="state {% if row.decision == 'KEEP' %}state--ok{% else %}state--warn{% endif %}">{{ row.decision | status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">本批没有闸门明细。</p>
+  {% endif %}
+</section>
+
+<section class="block">
+  <h2 class="block__title block__title--sub">重算</h2>
+  <form class="form" id="gate-form" data-batch="{{ batch.batch_id }}" data-version="{{ version }}" novalidate>
+    {% for dept in depts %}
+    <label class="field field--tight">
+      <span class="field__label">{{ dept.dept }}</span>
+      <input class="input" type="text" name="budget" data-dept="{{ dept.dept }}" value="{% if dept.budget_cents is not none %}{{ (dept.budget_cents / 100) | round(2) }}{% endif %}" inputmode="decimal">
+    </label>
+    {% endfor %}
+    <button class="btn" type="submit" id="gate-submit">提交预算</button>
+    <p class="form__msg" id="gate-msg" role="status" aria-live="polite"></p>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js" defer></script><script src="/static/tables.js" defer></script>{% endblock %}

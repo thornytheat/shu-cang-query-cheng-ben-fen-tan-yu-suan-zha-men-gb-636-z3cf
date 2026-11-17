@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    image: costsplit:local
+    environment:
+      COSTSPLIT_DB: /data/costsplit.sqlite
+      COSTSPLIT_SAMPLE_DIR: /app/sample_data
+      COSTSPLIT_SOURCE: bills_2026_11_dirty.csv
+      EVAL_DATE: "2026-11-15"
+      TZ: Asia/Shanghai
+    ports:
+      - "18205:8000"
+    volumes:
+      - costsplit-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://127.0.0.1:8000/healthz', timeout=2.0)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+
+volumes:
+  costsplit-data:
